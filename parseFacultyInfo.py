@@ -5,9 +5,13 @@ from PIL import Image
 from CaptchaParser import CaptchaParser
 import cookielib
 import json
+import sys, getopt
+from clint.textui import colored, puts
+from clint import arguments
 
 REGNO = ''
 PASSWORD = ''
+facultyInfo = []
 
 def login():
 	br = mechanize.Browser()
@@ -29,15 +33,12 @@ def login():
 	br.form['vrfcd'] = str(captcha)
 	br.submit()
 	if(br.geturl() == 'https://academics.vit.ac.in/student/home.asp'):
-		print '-'*30
-		print ' '*12+'SUCCESS'
-		print '-'*30
+		puts(colored.yellow("LOGIN SUCCESSFUL"))	
 		return br
 	else:
 		return None
 
-def parseFacultyPage(facultyID):
-	br = login()
+def parseFacultyPage(br, facultyID):
 	if(br is None):
 		return None
 
@@ -47,9 +48,11 @@ def parseFacultyPage(facultyID):
 	soup = BeautifulSoup(html)
 	tables = soup.findAll('table')
 	
-	#Extracting basic information of all the faculty
+	#Extracting basic information of the faculty
 	infoTable = tables[1].findAll('tr')
 	name = infoTable[1].findAll('td')[1].text
+	if(len(name) is 0):
+		return None
 	school = infoTable[2].findAll('td')[1].text
 	designation = infoTable[3].findAll('td')[1].text
 	room = infoTable[4].findAll('td')[1].text
@@ -59,19 +62,42 @@ def parseFacultyPage(facultyID):
 	additional_role = infoTable[8].findAll('td')[1].text
 
 	#Parsing the open hours of the faculties
-	dayOne = infoTable[9].findAll('table')[0].findAll('tr')[1].findAll('td')[0].text
-	dayTwo = infoTable[9].findAll('table')[0].findAll('tr')[2].findAll('td')[0].text
-	startDayOne = infoTable[9].findAll('table')[0].findAll('tr')[1].findAll('td')[1].text
-	startDayTwo = infoTable[9].findAll('table')[0].findAll('tr')[2].findAll('td')[1].text
-	endDayOne = infoTable[9].findAll('table')[0].findAll('tr')[1].findAll('td')[2].text
-	endDayTwo = infoTable[9].findAll('table')[0].findAll('tr')[2].findAll('td')[2].text
-
 	openHours = []
-	openHours.append({'day': dayOne, 'start_time': startDayOne, 'end_time': endDayOne})
-	openHours.append({'day': dayTwo, 'start_time': startDayTwo, 'end_time': endDayTwo})
+	try:
+		dayOne = infoTable[9].findAll('table')[0].findAll('tr')[1].findAll('td')[0].text
+		dayTwo = infoTable[9].findAll('table')[0].findAll('tr')[2].findAll('td')[0].text
+		startDayOne = infoTable[9].findAll('table')[0].findAll('tr')[1].findAll('td')[1].text
+		startDayTwo = infoTable[9].findAll('table')[0].findAll('tr')[2].findAll('td')[1].text
+		endDayOne = infoTable[9].findAll('table')[0].findAll('tr')[1].findAll('td')[2].text
+		endDayTwo = infoTable[9].findAll('table')[0].findAll('tr')[2].findAll('td')[2].text
+		openHours.append({'day': dayOne, 'start_time': startDayOne, 'end_time': endDayOne})
+		openHours.append({'day': dayTwo, 'start_time': startDayTwo, 'end_time': endDayTwo})
+	except IndexError:
+		openHours = []
 
-	result = {'name': name, 'school': school, 'designation': designation, 'room': room, 'intercom': intercom, 'email': email, 'division': division, 'open_hours': openHours}
+	result = {'empid': facultyID, 'name': name, 'school': school, 'designation': designation, 'room': room, 'intercom': intercom, 'email': email, 'division': division, 'open_hours': openHours}
 	return result
 
-result = parseFacultyPage(10395)
-print json.dumps(result)
+def aggregate():
+	br = login()
+	for i in range(10000, 20000, 1):
+		result = parseFacultyPage(br, i)
+		if(result is not None):
+			puts(colored.green("Parsed FacultyID = " + str(i)))
+			facultyInfo.append(result)
+		else:
+			puts(colored.red("Skipped FacultyID = " + str(i)))
+	data = {'faculty_info': facultyInfo}
+	with open('faculty_info.json', 'w') as outfile:
+		json.dump(data, outfile)
+
+if __name__ == '__main__':
+	print "-"*40
+	puts(colored.white(" "*15+"ProntoUsage"))
+	print "-"*40
+	args = arguments.Args()
+	REGNO = args.get(0)
+	PASSWORD = args.get(1)
+	aggregate()
+
+

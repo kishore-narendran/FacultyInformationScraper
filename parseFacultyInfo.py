@@ -76,11 +76,13 @@ def parseFacultyPage(br, facultyID):
 		openHours = []
 
 	result = {'empid': facultyID, 'name': name, 'school': school, 'designation': designation, 'room': room, 'intercom': intercom, 'email': email, 'division': division, 'open_hours': openHours}
+	with open(str(facultyID) +'.json', 'w') as outfile:
+		json.dump(result, outfile)
 	return result
 
 def aggregate():
 	br = login()
-	for i in range(10000, 20000, 1):
+	for i in range(10020, 20000, 1):
 		result = parseFacultyPage(br, i)
 		if(result is not None):
 			puts(colored.green("Parsed FacultyID = " + str(i)))

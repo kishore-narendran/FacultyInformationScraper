@@ -1,4 +1,4 @@
-from bs4 import BeautifulSoup
+from BeautifulSoup import BeautifulSoup
 import mechanize
 from StringIO import StringIO
 from PIL import Image
@@ -33,7 +33,7 @@ def login():
 	br.form['vrfcd'] = str(captcha)
 	br.submit()
 	if(br.geturl() == 'https://academics.vit.ac.in/student/home.asp'):
-		puts(colored.yellow("LOGIN SUCCESSFUL"))	
+		puts(colored.yellow("LOGIN SUCCESSFUL"))
 		return br
 	else:
 		return None
@@ -47,7 +47,7 @@ def parseFacultyPage(br, facultyID):
 	html = response.read()
 	soup = BeautifulSoup(html)
 	tables = soup.findAll('table')
-	
+
 	#Extracting basic information of the faculty
 	infoTable = tables[1].findAll('tr')
 	name = infoTable[1].findAll('td')[1].text
@@ -101,5 +101,3 @@ if __name__ == '__main__':
 	REGNO = args.get(0)
 	PASSWORD = args.get(1)
 	aggregate()
-
-

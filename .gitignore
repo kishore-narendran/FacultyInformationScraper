@@ -58,3 +58,7 @@ docs/_build/
 target/
 
 output/
+
+# OS Specific
+.DS_Store
+*~

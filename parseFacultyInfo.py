@@ -8,6 +8,7 @@ import json
 import sys, getopt
 from clint.textui import colored, puts
 from clint import arguments
+import os
 
 REGNO = ''
 PASSWORD = ''
@@ -49,34 +50,37 @@ def parseFacultyPage(br, facultyID):
 	tables = soup.findAll('table')
 
 	#Extracting basic information of the faculty
-	infoTable = tables[1].findAll('tr')
-	name = infoTable[1].findAll('td')[1].text
+	infoTable = tables[0].findAll('tr')
+	name = infoTable[2].findAll('td')[1].text
 	if(len(name) is 0):
 		return None
-	school = infoTable[2].findAll('td')[1].text
-	designation = infoTable[3].findAll('td')[1].text
-	room = infoTable[4].findAll('td')[1].text
-	intercom = infoTable[5].findAll('td')[1].text
-	email = infoTable[6].findAll('td')[1].text
-	division = infoTable[7].findAll('td')[1].text
-	additional_role = infoTable[8].findAll('td')[1].text
+	school = infoTable[3].findAll('td')[1].text
+	designation = infoTable[4].findAll('td')[1].text
+	room = infoTable[5].findAll('td')[1].text
+	intercom = infoTable[6].findAll('td')[1].text
+	email = infoTable[7].findAll('td')[1].text
+	division = infoTable[8].findAll('td')[1].text
+	additional_role = infoTable[9].findAll('td')[1].text
 
 	#Parsing the open hours of the faculties
 	openHours = []
 	try:
-		dayOne = infoTable[9].findAll('table')[0].findAll('tr')[1].findAll('td')[0].text
-		dayTwo = infoTable[9].findAll('table')[0].findAll('tr')[2].findAll('td')[0].text
-		startDayOne = infoTable[9].findAll('table')[0].findAll('tr')[1].findAll('td')[1].text
-		startDayTwo = infoTable[9].findAll('table')[0].findAll('tr')[2].findAll('td')[1].text
-		endDayOne = infoTable[9].findAll('table')[0].findAll('tr')[1].findAll('td')[2].text
-		endDayTwo = infoTable[9].findAll('table')[0].findAll('tr')[2].findAll('td')[2].text
+		dayOne = infoTable[10].findAll('table')[0].findAll('tr')[1].findAll('td')[0].text
+		dayTwo = infoTable[10].findAll('table')[0].findAll('tr')[2].findAll('td')[0].text
+		startDayOne = infoTable[10].findAll('table')[0].findAll('tr')[1].findAll('td')[1].text
+		startDayTwo = infoTable[10].findAll('table')[0].findAll('tr')[2].findAll('td')[1].text
+		endDayOne = infoTable[10].findAll('table')[0].findAll('tr')[1].findAll('td')[2].text
+		endDayTwo = infoTable[10].findAll('table')[0].findAll('tr')[2].findAll('td')[2].text
 		openHours.append({'day': dayOne, 'start_time': startDayOne, 'end_time': endDayOne})
 		openHours.append({'day': dayTwo, 'start_time': startDayTwo, 'end_time': endDayTwo})
 	except IndexError:
 		openHours = []
 
+	outputPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'output')
+	if os.path.isdir(outputPath) is False:
+		os.makedirs(outputPath)
 	result = {'empid': facultyID, 'name': name, 'school': school, 'designation': designation, 'room': room, 'intercom': intercom, 'email': email, 'division': division, 'open_hours': openHours}
-	with open(str(facultyID) +'.json', 'w') as outfile:
+	with open('output/' + str(facultyID) + '.json', 'w') as outfile:
 		json.dump(result, outfile)
 	return result
 

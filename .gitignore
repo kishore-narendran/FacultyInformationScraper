@@ -57,5 +57,4 @@ docs/_build/
 # PyBuilder
 target/
 
-CaptchaParser.py
 output/

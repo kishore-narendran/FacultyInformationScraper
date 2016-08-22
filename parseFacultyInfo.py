@@ -10,12 +10,13 @@ from clint.textui import colored, puts
 from clint import arguments
 import os
 
-REGNO = ''
-PASSWORD = ''
+
 facultyInfo = []
 
 
 def login():
+    REGNO = ''
+    PASSWORD = ''
     br = mechanize.Browser()
     br.set_handle_redirect(True)
     br.set_handle_referer(True)
@@ -38,6 +39,7 @@ def login():
         puts(colored.yellow("LOGIN SUCCESSFUL"))
         return br
     else:
+        print 'Could not login'
         return None
 
 
@@ -103,9 +105,13 @@ def aggregate():
 
 if __name__ == '__main__':
     print "-" * 40
-    puts(colored.white(" " * 15 + "ProntoUsage"))
+    puts(colored.white(" " * 15 + "Faculty Information Scrapper"))
     print "-" * 40
     args = arguments.Args()
     REGNO = args.get(0)
     PASSWORD = args.get(1)
-    aggregate()
+    try:
+        aggregate()
+    except Exception, e:
+        if e.code==403:
+            print 'Disallowed to access the page. Please check your internet connection.'

@@ -9,17 +9,39 @@ import sys, getopt
 from clint.textui import colored, puts
 from clint import arguments
 import os
+import ssl
+import argparse
 
 
 facultyInfo = []
 
+# For SSL certificate error
+try:
+    _create_unverified_https_context = ssl._create_unverified_context
+except AttributeError:
+    pass
+else:
+    ssl._create_default_https_context = _create_unverified_https_context
 
-def login():
-    REGNO = ''
-    PASSWORD = ''
+# Progress Bar
+def progress(count, total, status=''):
+    rows, columns = os.popen('stty size', 'r').read().split()
+    bar_len = int(columns) - 40
+
+    filled_len = int(round(bar_len * count / float(total)))
+
+    percents = round(100.0 * count / float(total), 1)
+    bar = '=' * filled_len + '-' * (bar_len - filled_len)
+
+    sys.stdout.write('[%s] %s%s ...%s\r' % (bar, percents, '%', status))
+    sys.stdout.flush() 
+
+def login(regno, password):
     br = mechanize.Browser()
     br.set_handle_redirect(True)
     br.set_handle_referer(True)
+    # For 403 Error
+    br.set_handle_robots(False)
     cj = cookielib.CookieJar()
     br.set_cookiejar(cj)
     response = br.open('https://vtop.vit.ac.in/student/stud_login.asp')
@@ -31,10 +53,11 @@ def login():
     parser = CaptchaParser()
     captcha = parser.getCaptcha(img)
     br.select_form('stud_login')
-    br.form['regno'] = REGNO
-    br.form['passwd'] = PASSWORD
+    br.form['regno'] = regno
+    br.form['passwd'] = password
     br.form['vrfcd'] = str(captcha)
     br.submit()
+
     if (br.geturl() == 'https://vtop.vit.ac.in/student/home.asp'):
         puts(colored.yellow("LOGIN SUCCESSFUL"))
         return br
@@ -89,29 +112,38 @@ def parseFacultyPage(br, facultyID):
     return result
 
 
-def aggregate():
-    br = login()
+def aggregate(regno, password):
+    br = login(regno, password)
+    if br is None:
+        return
+    skipped = 0
+    successful = 0
     for i in range(10020, 20000, 1):
         result = parseFacultyPage(br, i)
         if (result is not None):
-            puts(colored.green("Parsed FacultyID = " + str(i)))
             facultyInfo.append(result)
             data = {'faculty_info': facultyInfo}
             with open('faculty_info.json', 'w') as outfile:
-             json.dump(data, outfile,indent=4)
+                json.dump(data, outfile,indent=4)
+            successful += 1
         else:
-            puts(colored.red("Skipped FacultyID = " + str(i)))
-
+            skipped += 1
+        status = "%s Skipped, %s Succesful" % (skipped, successful)
+        progress(i - 10020, 9980, status)
 
 if __name__ == '__main__':
     print "-" * 40
     puts(colored.white(" " * 15 + "Faculty Information Scrapper"))
     print "-" * 40
-    args = arguments.Args()
-    REGNO = args.get(0)
-    PASSWORD = args.get(1)
+    # argparse for better cmd arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument("regno", help="Your Registration Number")
+    parser.add_argument("password", help="Your Student Login Password")
+    args = parser.parse_args()
+
     try:
-        aggregate()
+        aggregate(args.regno, args.password)
     except Exception, e:
+        print e
         if e.code==403:
             print 'Disallowed to access the page. Please check your internet connection.'
